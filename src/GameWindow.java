@@ -1,39 +1,25 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
 public class GameWindow extends JPanel implements KeyListener, MouseMotionListener {
-    int[][] map = {
-            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1},
-            {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1},
-            {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1},
-            {1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    };
+    Level map;
+
+    int tileSize = 64;
+    double playerX = tileSize * 1.5;
+    double playerY = tileSize * 1.5;
+    double playerAngle = 0;
+
+    double speed = 150;
+    double mouseSensitivity = 0.002;
+
+    long lastTime = System.nanoTime();
+
+    boolean forward, backward, left, right;
 
     Robot robot;
     boolean recenter = false;
-
-    int tileSize = 64;
-    double playerX = 160;
-    double playerY = 160;
-    double playerAngle = 0;
-    double mouseSensitivity = 0.002;
-    double speed = 200;
-
-    boolean forward, backward, left, right;
 
     public GameWindow() {
         setPreferredSize(new Dimension(640, 420));
@@ -42,131 +28,189 @@ public class GameWindow extends JPanel implements KeyListener, MouseMotionListen
         addKeyListener(this);
         addMouseMotionListener(this);
 
-        // Game timer
         Timer timer = new Timer(16, e -> update());
         timer.start();
+        map = new Level(40, 36, 64);
 
-        // Cursor hider
-        try  {
-                robot = new Robot();
+        try {
+            robot = new Robot();
         } catch (AWTException e) {
             e.printStackTrace();
         }
+
         hideCursor();
+    }
+
+    private void hideCursor() {
+        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Cursor blank = Toolkit.getDefaultToolkit()
+                .createCustomCursor(img, new Point(0, 0), "blank");
+        setCursor(blank);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        int screenWidth = getWidth(); // Also is the number of rays
+        int screenWidth = getWidth();
         int screenHeight = getHeight();
+
+//        Sky Box
+        g.setColor(Color.CYAN);
+        g.fillRect(0, 0, screenWidth, screenHeight / 2);
+
+//        Floor
+        g.setColor(Color.GRAY);
+        g.fillRect(0, screenHeight / 2, screenWidth, screenHeight / 2);
 
         double fov = Math.PI / 3;
 
-        for (int i = 0; i < screenWidth; i++) {
-            double rayAngle = playerAngle - fov / 2 + fov * i / screenWidth;
-            double rayX = Math.cos(rayAngle);
-            double rayY = Math.sin(rayAngle);
+        for (int x = 0; x < screenWidth; x++) {
 
-            double distance = 0;
-            boolean hitWall = false;
+            RayResult ray = castRay(fov, x, screenWidth);
 
-            while (!hitWall && distance < 800) {
-                distance += 1;
+            double correctedDistance = ray.distance * Math.cos(ray.angle - playerAngle);
 
-                int testX = (int) ((playerX + rayX * distance) / tileSize);
-                int testY = (int) ((playerY + rayY * distance) / tileSize);
+            int wallHeight = (int)(screenHeight * tileSize / correctedDistance);
 
-                if (map[testY][testX] == 1) hitWall = true;
-            }
-
-            double correctedDistance = distance * Math.cos(rayAngle - playerAngle);
-            int wallHeight = (int) (screenHeight * tileSize / correctedDistance);
             int start = screenHeight / 2 - wallHeight / 2;
 
-            g.setColor(Color.BLUE);
-            g.drawLine(i, start, i, start + wallHeight);
+            switch (ray.wallType) {
+                case 1 -> g.setColor(Color.BLUE);
+                case 2 -> g.setColor(Color.RED);
+                case 3 -> g.setColor(Color.GREEN);
+                case 4 -> g.setColor(Color.ORANGE);
+                case 5 -> g.setColor(Color.YELLOW);
+                default -> g.setColor(Color.WHITE);
+            }
+
+            g.drawLine(x, start, x, start + wallHeight);
         }
     }
 
-    public void update() {
+    private RayResult castRay(double fov, int column, int screenWidth) {
+
+        double rayAngle = playerAngle - fov / 2 + fov * column / screenWidth;
+
+        double rayX = Math.cos(rayAngle);
+        double rayY = Math.sin(rayAngle);
+
+        double distance = 0;
+
+        while (distance < 800) {
+            distance += 1;
+
+            double worldX = playerX + rayX * distance;
+            double worldY = playerY + rayY * distance;
+
+            int wall = map.getWallType(worldX, worldY);
+
+            if (wall > 0) {
+                return new RayResult(distance, wall, rayAngle);
+            }
+        }
+
+        return new RayResult(800, 1, rayAngle);
+    }
+
+    private void update() {
+
+        long now = System.nanoTime();
+        double deltaTime = (now - lastTime) / 1_000_000_000.0;
+        lastTime = now;
+
+        double moveStep = speed * deltaTime;
+
+        double moveX = 0;
+        double moveY = 0;
+
         if (forward) {
-            playerX += Math.cos(playerAngle) * speed;
-            playerY += Math.sin(playerAngle) * speed;
+            moveX += Math.cos(playerAngle);
+            moveY += Math.sin(playerAngle);
         }
-
         if (backward) {
-            playerX -= Math.cos(playerAngle) * speed;
-            playerY -= Math.sin(playerAngle) * speed;
+            moveX -= Math.cos(playerAngle);
+            moveY -= Math.sin(playerAngle);
         }
-
         if (left) {
-            playerX += Math.cos(playerAngle - Math.PI / 2) * speed;
-            playerY += Math.sin(playerAngle - Math.PI / 2) * speed;
+            moveX += Math.cos(playerAngle - Math.PI/2);
+            moveY += Math.sin(playerAngle - Math.PI/2);
+        }
+        if (right) {
+            moveX -= Math.cos(playerAngle - Math.PI/2);
+            moveY -= Math.sin(playerAngle - Math.PI/2);
         }
 
-        if (right) {
-            playerX -= Math.cos(playerAngle - Math.PI / 2) * speed;
-            playerY -= Math.sin(playerAngle - Math.PI / 2) * speed;
+        double length = Math.hypot(moveX, moveY);
+
+        if (length > 0) {
+            moveX = moveX / length * moveStep;
+            moveY = moveY / length * moveStep;
         }
+
+        if (map.getWallType(playerX + moveX, playerY) == 0)
+            playerX += moveX;
+
+        if (map.getWallType(playerX, playerY + moveY) == 0)
+            playerY += moveY;
 
         repaint();
     }
 
-    public void hideCursor() {
-        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(img, new Point(0, 0), "blank");
-        setCursor(blankCursor);
+    private static class RayResult {
+        double distance;
+        int wallType;
+        double angle;
+
+        RayResult(double d, int w, double a) {
+            distance = d;
+            wallType = w;
+            angle = a;
+        }
     }
 
-
     @Override
-    public void keyPressed(KeyEvent keyEvent) {
-        switch (keyEvent.getKeyCode()) {
-            case KeyEvent.VK_A -> left = true;
-            case KeyEvent.VK_D -> right = true;
+    public void keyPressed(KeyEvent e) {
+        switch (e.getKeyCode()) {
             case KeyEvent.VK_W -> forward = true;
             case KeyEvent.VK_S -> backward = true;
+            case KeyEvent.VK_A -> left = true;
+            case KeyEvent.VK_D -> right = true;
         }
     }
 
     @Override
-    public void keyReleased(KeyEvent keyEvent) {
-        switch (keyEvent.getKeyCode()) {
-            case KeyEvent.VK_A -> left = false;
-            case KeyEvent.VK_D -> right = false;
+    public void keyReleased(KeyEvent e) {
+        switch (e.getKeyCode()) {
             case KeyEvent.VK_W -> forward = false;
             case KeyEvent.VK_S -> backward = false;
+            case KeyEvent.VK_A -> left = false;
+            case KeyEvent.VK_D -> right = false;
         }
     }
 
+    @Override public void keyTyped(KeyEvent e) {}
+
     @Override
-    public void mouseMoved(MouseEvent mouseEvent) {
+    public void mouseMoved(MouseEvent e) {
         if (recenter) {
             recenter = false;
             return;
         }
 
-        int centerX = getWidth() / 2;
-        int centerY = getHeight() / 2;
-
-        int dx = mouseEvent.getX() - centerX;
+        int centerX = getWidth()/2;
+        int dx = e.getX() - centerX;
 
         playerAngle += dx * mouseSensitivity;
         playerAngle %= Math.PI * 2;
 
         recenter = true;
-        Point windowPos = getLocationOnScreen();
-        robot.mouseMove(windowPos.x + centerX, windowPos.y + centerY);
+        Point p = getLocationOnScreen();
+        robot.mouseMove(p.x + centerX,p.y + getHeight()/2);
     }
 
     @Override
-    public void mouseDragged(MouseEvent mouseEvent) {
-        mouseMoved(mouseEvent);
-    }
-
-    @Override
-    public void keyTyped(KeyEvent keyEvent) {
+    public void mouseDragged(MouseEvent e) {
+        mouseMoved(e);
     }
 }
