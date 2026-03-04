@@ -2,8 +2,7 @@
 
 > 🎮 A simple Java raycasting engine inspired by classic 90s shooters like **Wolfenstein 3D** — built completely from scratch in pure Java with no external build tools.
 
-![Demo Video](https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7
-)
+https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7
 
 ---
 
