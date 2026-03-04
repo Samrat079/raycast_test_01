@@ -3,9 +3,9 @@
 > 🎮 A simple Java raycasting engine inspired by classic 90s shooters like **Wolfenstein 3D** — built completely from
 > scratch in pure Java with no external build tools.
 
-  <video width="600" autoplay loop muted playsinline>
-    <source src="https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7" type="video/mp4">
-  </video>
+<div style="text-align: center;">
+  <video width="600" src="https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7" autoplay loop muted playsinline></video>
+</div>
 
 ## 🧠 About the Project
 
