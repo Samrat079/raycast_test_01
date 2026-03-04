@@ -1,13 +1,11 @@
 # Raycast Test 01
 
-> 🎮 A simple Java raycasting engine inspired by classic 90s shooters like **Wolfenstein 3D** — built completely from scratch in pure Java with no external build tools.
+> 🎮 A simple Java raycasting engine inspired by classic 90s shooters like **Wolfenstein 3D** — built completely from
+> scratch in pure Java with no external build tools.
 
-<div align="center">
   <video width="600" autoplay loop muted playsinline>
     <source src="https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7" type="video/mp4">
   </video>
-</div>
----
 
 ## 🧠 About the Project
 
@@ -36,7 +34,8 @@ Instead of rendering full 3D geometry, the engine:
 3. Detects where each ray hits a wall.
 4. Uses the distance to that wall to determine how tall a vertical slice should be drawn on screen.
 
-By repeating this for every vertical column of pixels on the screen, the engine produces a convincing first-person 3D illusion.
+By repeating this for every vertical column of pixels on the screen, the engine produces a convincing first-person 3D
+illusion.
 
 This is the same fundamental technique used in **Wolfenstein 3D** and other early FPS games.
 
@@ -140,7 +139,8 @@ Possible next upgrades:
 
 ## 🎯 Purpose
 
-This project exists to understand the mathematics behind early 3D rendering engines and to explore how much can be achieved using only core Java and simple geometry.
+This project exists to understand the mathematics behind early 3D rendering engines and to explore how much can be
+achieved using only core Java and simple geometry.
 
 It’s a learning project focused on:
 
