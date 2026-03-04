@@ -1,0 +1,38 @@
+name: Release jar
+on: push
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: checkout marketplace
+        uses: actions/checkout@v6
+
+      - name: setup java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: build with javac
+        run: javac -d build src/*.java
+
+      - name: copy manifest
+        run: |
+          mkdir -p build/META-INF
+          cp src/META-INF/MANIFEST.MF build/META-INF
+      - name: Create jar
+        run: |
+          jar cfm raycast_test_01.jar build/META-INF/MANIFEST.MF -C build .
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: v${{ github.run_number }}
+          files: raycast_test_01.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
