@@ -4,7 +4,7 @@
 > scratch in pure Java with no external build tools.
 
 <div style="text-align: center;">
-  <video width="600" src="https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7" autoplay loop muted playsinline></video>
+  <video width="420" src="https://github.com/user-attachments/assets/d6b5cd1c-afd1-4fa7-952a-07965e8c4be7" autoplay loop muted playsinline></video>
 </div>
 
 ## 🧠 About the Project
